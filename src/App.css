@@ -1,6 +1,7 @@
 body {
   text-align: center;
-  background-image: linear-gradient(-225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%);
+  /*background-image: linear-gradient(-225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%);*/
+  background: white;
   height: 100%;
   margin: 0;
   background-repeat: no-repeat;
@@ -23,4 +24,40 @@ body {
 .example-leave.example-leave-active {
   opacity: 0.01;
   transition: opacity 100ms ease-in;
+}
+
+.tweet_container{
+  width: 50%;
+  margin: 0 auto;
+  top: 10px;
+  position: relative;
+}
+
+.card-panel {
+  /*background: white;*/
+  background: #1da1f2;
+  margin-bottom: 10px;
+}
+
+.MuiAppBar-colorPrimary {
+  color: #fff !important;
+  background-color: #1da1f2 !important;
+}
+
+.MuiButton-containedPrimary {
+  color: #fff !important;
+  background-color: #1da1f2 !important;
+  border-radius: 20px;
+}
+
+.white-text {
+  color:white;
+}
+
+.MuiPaper-root {
+  background-color: #1da1f2 !important;
+}
+
+.card-content {
+  display: flex;
 }

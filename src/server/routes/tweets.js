@@ -1,46 +1,87 @@
 const Twitter = require('twitter');
+const config = require('config');
+const SearchKey = require('../../models/searchKey.model');
 
 module.exports = (app, io) => {
+    console.log('process.env :', process.env.TWITTER_CONSUMER_KEY)
     let twitter = new Twitter({
-        consumer_key: process.env.TWITTER_CONSUMER_KEY,
-        consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
-        access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
-        access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+        consumer_key: config.get('TWITTER_CONSUMER_KEY'),
+        consumer_secret: config.get('TWITTER_CONSUMER_SECRET'),
+        access_token_key: config.get('TWITTER_ACCESS_TOKEN_KEY'),
+        access_token_secret: config.get('TWITTER_ACCESS_TOKEN_SECRET')
     });
 
     let socketConnection;
     let twitterStream;
 
-    app.locals.searchTerm = 'Javascript'; //Default search term for twitter stream.
+    app.locals.searchTerm = ''; //Default search term for twitter stream.
     app.locals.showRetweets = false; //Default
 
     /**
      * Resumes twitter stream.
      */
     const stream = () => {
-        console.log('Resuming for ' + app.locals.searchTerm);
-        twitter.stream('statuses/filter', { track: app.locals.searchTerm }, (stream) => {
-            stream.on('data', (tweet) => {
-                sendMessage(tweet);
-            });
+        console.log('terms : ', app.locals.searchTerm)
+        if (app.locals.searchTerm) {
+            console.log('Resuming for ' + app.locals.searchTerm);
+            twitter.stream('statuses/filter', { track: app.locals.searchTerm }, (stream) => {
+                stream.on('data', (tweet) => {
+                    sendMessage(tweet);
+                });
 
-            stream.on('error', (error) => {
-                console.log('test : ', error);
-            });
+                stream.on('error', (error) => {
+                    console.log(error);
+                });
 
-            twitterStream = stream;
-        });
+                twitterStream = stream;
+            });
+        }
     }
+
+    /**
+     * get first 25 tweets based on search item
+     */
+    /*app.post('/setSearchTerm', (req, res) => {
+        //twitterStream.destroy();
+        let term = req.body.searchTerm;
+        app.locals.searchTerm = term;
+        let params = {
+            q: term,
+            count: 25
+        }
+        twitter.get('search/tweets', params, (err, tweets, response) => {
+            //console('logdata : ', tweet);
+            if (err) {
+                res.status(500);
+            } else {
+                //res.status(200);
+                res.json(tweets);
+                if (twitterStream) {
+                    twitterStream.destroy();
+                }
+                stream();
+            }
+        });
+    })*/
 
     /**
      * Sets search term for twitter stream.
      */
-    app.post('/setSearchTerm', (req, res) => {
-        let term = req.body.term;
-        console.log('term :', term)
+    app.post('/setSearchTerm', async (req, res) => {
+        let term = req.body.searchTerm;
         app.locals.searchTerm = term;
-        twitterStream.destroy();
-        stream();
+        if (twitterStream) twitterStream.destroy();
+        try {
+            /**
+             * @desc store searched word with date in DB 
+             */
+            const searched = await SearchKey.create({searchedTerm: term})
+            res.json(searched);
+            await stream();
+        } catch(err) {
+            console.log(err)
+            res.status(500).send('Server Error');
+        }
     });
 
     /**
